@@ -5,7 +5,7 @@ export async function identity() {
   if (!session.userId) return null;
   const clerkUser = await currentUser();
   const email = clerkUser?.emailAddresses.find(e => e.id === clerkUser.primaryEmailAddressId);
-  if (!clerkUser || !email?.emailAddress || !email.verification?.verifiedAt) return null;
+  if (!clerkUser || !email?.emailAddress || email.verification?.status !== 'verified') return null;
   const sql = db();
   await sql`INSERT INTO players (clerk_user_id, email, username, avatar_url) VALUES (${session.userId}, ${email.emailAddress.toLowerCase()}, ${clerkUser.username || clerkUser.firstName || 'Player'}, ${clerkUser.imageUrl}) ON CONFLICT (clerk_user_id) DO UPDATE SET email = EXCLUDED.email, avatar_url = EXCLUDED.avatar_url`;
   const state = await sql`SELECT banned FROM players WHERE clerk_user_id=${session.userId} LIMIT 1`;
