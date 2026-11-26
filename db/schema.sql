@@ -1,0 +1,10 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE TABLE IF NOT EXISTS players (clerk_user_id text PRIMARY KEY, email text UNIQUE NOT NULL, username text NOT NULL, avatar_url text, total_rolls integer NOT NULL DEFAULT 0 CHECK(total_rolls>=0), best_rarity text NOT NULL DEFAULT 'Trash', banned boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS rarities (id serial PRIMARY KEY, name text UNIQUE NOT NULL, tier_order integer UNIQUE NOT NULL, chance numeric(8,5) NOT NULL CHECK(chance>=0), color text NOT NULL, enabled boolean NOT NULL DEFAULT true);
+INSERT INTO rarities(name,tier_order,chance,color) VALUES ('Trash',1,45,'#78839b'),('Common',2,30,'#a4adbd'),('Uncommon',3,15,'#54d69a'),('Rare',4,7,'#4d9dff'),('Epic',5,2.5,'#a77bff'),('Mythic',6,0.45,'#f16bce'),('Legendary',7,0.049,'#ffc45c'),('GOD',8,0.001,'#fff08a') ON CONFLICT(name) DO NOTHING;
+CREATE TABLE IF NOT EXISTS rolls (id bigserial PRIMARY KEY, clerk_user_id text NOT NULL REFERENCES players(clerk_user_id) ON DELETE CASCADE, rarity text NOT NULL, item_name text NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS rolls_user_created_idx ON rolls(clerk_user_id,created_at DESC);
+CREATE TABLE IF NOT EXISTS settings (key text PRIMARY KEY,value jsonb NOT NULL);
+INSERT INTO settings(key,value) VALUES ('site_name','"RNGDLE"'),('announcement','""'),('maintenance_mode','false') ON CONFLICT(key) DO NOTHING;
+CREATE TABLE IF NOT EXISTS activity (id bigserial PRIMARY KEY, actor_id text, action text NOT NULL, details jsonb NOT NULL DEFAULT '{}'::jsonb, created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS activity_created_idx ON activity(created_at DESC);
